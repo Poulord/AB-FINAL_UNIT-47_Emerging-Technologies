@@ -1,57 +1,67 @@
 # Lily Flores Photography
 
-Sitio web profesional para Lily Flores Photography, desarrollado como proyecto informativo y de presencia digital. La web está construida con HTML, CSS y JavaScript, y preparada para desplegarse en Vercel desde un repositorio en GitHub.
+Landing web estática para Lily Flores Photography, construida como una experiencia visual elegante para presentar servicios de fotografía editorial, bodas, lifestyle, marcas personales, retiros wellness y creación de contenido.
 
-## Descripción
+## Qué incluye este proyecto
 
-Esta web presenta los servicios fotográficos de Lily Flores, con galerías, secciones para bodas, lifestyle, personal brands, wellness retreats y creación de contenido. También incluye un formulario de contacto para facilitar la conexión con clientes.
+- Página principal `index.html` con hero visual y navegación a servicios.
+- Páginas de servicio separadas para cada categoría:
+  - `weddings.html`
+  - `lifestyle.html`
+  - `personal-brands.html`
+  - `wellness-retreats.html`
+  - `content-creation.html`
+- Galería principal en `gallery.html`.
+- Formulario de contacto en `contact.html` con envío vía correo.
+- Estilos globales en `styles.css`.
+- Interactividad de navegación y formulario en `script.js`.
+- Configuración de despliegue en `vercel.json`.
+- Contenido visual organizado en `img/`.
 
-## Tecnologías usadas
+## Tecnologías utilizadas
 
-- HTML
-- CSS
-- JavaScript
-- GitHub
+- HTML5
+- CSS3
+- JavaScript (ES6)
 - Vercel
-- Outlook / correo
+- GitHub
 
-## Estructura del proyecto
+## Documentación adicional
 
-Raíz del proyecto:
-
-- `index.html`
-- `gallery.html`
-- `weddings.html`
-- `lifestyle.html`
-- `personal-brands.html`
-- `wellness-retreats.html`
-- `content-creation.html`
-- `contact.html`
-- `styles.css`
-- `script.js`
-- `vercel.json`
-- `img/`
+- `ARQUITECTURA.MD` — Arquitectura técnica y diseño del proyecto.
+- `ESTRUCTURA_DEL_PROYECTO.MD` — Organización de archivos y recursos.
+- `DESPLIEGUE_INSTALACION.MD` — Instrucciones para correr el proyecto localmente y desplegar en Vercel.
+- `FLUJO_Y_AGENTES.MD` — Flujo de usuario, flujo de desarrollo y agentes conceptuales.
 
 ## Cómo ejecutar localmente
 
 1. Clonar el repositorio:
-   ```bash
-   git clone <URL-del-repo>
-   ```
-2. Abrir `index.html` en el navegador o usar un servidor local simple.
+
+```bash
+git clone <URL-del-repositorio>
+cd "Web Lilly"
+```
+
+2. Abrir `index.html` directamente en el navegador o usar un servidor local estático.
+
+3. Para usar un servidor local recomendado:
+
+```bash
+npx serve .
+```
+
+4. Si usas Visual Studio Code, también puedes usar la extensión Live Server.
 
 ## Despliegue
 
-La web está diseñada para desplegarse en Vercel y enlazarse con un repositorio en GitHub. El archivo `vercel.json` define la configuración básica de despliegue.
+El sitio está preparado para un despliegue estático en Vercel.
 
-## Mejoras futuras
+- `vercel.json` habilita URLs limpias y controla la caché para imágenes.
+- Simplemente conecta el repositorio con Vercel y el servicio detectará y desplegará el proyecto.
 
-- Integración con Supabase como backend opcional
-- Añadir analítica y seguimiento de usuarios
-- Mejorar SEO y accesibilidad
-- Validación y manejo del formulario de contacto
-- Optimización de imágenes y recursos
+## Mejores prácticas
 
-## Notas
-
-El proyecto se desarrolla como una landing web estática con foco en experiencia visual y presentación de servicios fotográficos.
+- Mantener `styles.css` y `script.js` como recursos compartidos para toda la web.
+- Evitar copiar estilos o scripts entre páginas.
+- Mantener la navegación consistente en todas las páginas.
+- Optimizar y versionar imágenes dentro de `img/`.
