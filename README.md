@@ -42,22 +42,23 @@ git clone <URL-del-repositorio>
 cd "Web Lilly"
 ```
 
-2. Abrir `index.html` directamente en el navegador o usar un servidor local estático.
+2. Copiar `.env.example` a `.env` e indicar el proyecto Supabase y su clave publishable.
 
 3. Para usar un servidor local recomendado:
 
 ```bash
-npx serve .
+npm ci
+npm run dev
 ```
 
-4. Si usas Visual Studio Code, también puedes usar la extensión Live Server.
+4. Abrir `http://localhost:4173/` para la web y `/admin.html` para el panel. Ver [guía de administración](markdown/ADMINISTRACION.MD).
 
 ## Despliegue
 
 El sitio está preparado para un despliegue estático en Vercel.
 
 - `vercel.json` habilita URLs limpias y controla la caché para imágenes.
-- Simplemente conecta el repositorio con Vercel y el servicio detectará y desplegará el proyecto.
+- Vercel ejecuta `npm run build` y publica `dist/`. Configurar `SUPABASE_URL` y `SUPABASE_PUBLISHABLE_KEY` en el entorno Preview para probar esta rama.
 
 ## Mejores prácticas
 

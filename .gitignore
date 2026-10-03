@@ -1,4 +1,11 @@
+node_modules/
 qa/
 .vercel/
-
-.vercel
+dist/
+.env
+.env.*
+!.env.example
+output/
+.playwright-cli/
+supabase/.temp/
+output-fixture.json
