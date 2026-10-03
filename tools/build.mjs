@@ -1,20 +1,29 @@
 import { build } from 'esbuild';
-import { readdir, mkdir, copyFile, cp, writeFile } from 'node:fs/promises';
+import { mkdir, copyFile, readFile, rm } from 'node:fs/promises';
+import { resolve, dirname, sep } from 'node:path';
+import { publicConfig } from './public-config.mjs';
 import { existsSync } from 'node:fs';
 import { loadEnvFile } from 'node:process';
 if (existsSync('.env')) loadEnvFile('.env');
+const config = publicConfig(process.env);
+const root = resolve('.'); const output = resolve('dist');
+if (output !== resolve(root, 'dist') || !output.startsWith(root + sep)) throw new Error('Unsafe build output path.');
+await rm(output, { recursive: true, force: true });
 await mkdir('dist/assets', { recursive: true });
-for (const file of await readdir('.')) {
-  if (/\.(html|css)$/.test(file) || file === 'script.js') await copyFile(file, `dist/${file}`);
+const pages = ['index.html','gallery.html','weddings.html','lifestyle.html','personal-brands.html','wellness-retreats.html','content-creation.html','contact.html','admin.html'];
+const images = new Set(JSON.parse(await readFile('content-seed.json', 'utf8')).map(photo => photo.source));
+for (const file of [...pages, 'styles.css', 'admin.css', 'script.js']) {
+  await copyFile(file, `dist/${file}`);
+  if (pages.includes(file)) {
+    for (const match of (await readFile(file, 'utf8')).matchAll(/\bsrc="(img\/[^"]+)"/g)) images.add(match[1]);
+  }
 }
-await cp('img', 'dist/img', { recursive: true });
+for (const src of images) {
+  const image = decodeURIComponent(src); const source = resolve(image);
+  if (!source.startsWith(resolve('img') + sep)) throw new Error('Invalid image path.');
+  await mkdir(dirname(resolve('dist', image)), { recursive: true });
+  await copyFile(source, resolve('dist', image));
+}
 await copyFile('content-seed.json', 'dist/content-seed.json');
-const config = { url: process.env.SUPABASE_URL || '', key: process.env.SUPABASE_PUBLISHABLE_KEY || '' };
-if (config.key && !/^(sb_publishable_|eyJ)/.test(config.key)) throw new Error('Use only a publishable or legacy anon key.');
-if (config.key.startsWith('eyJ')) {
-  const claims = JSON.parse(Buffer.from(config.key.split('.')[1], 'base64url').toString());
-  if (claims.role !== 'anon') throw new Error('Secret/service role keys must never enter the browser.');
-}
 await build({ entryPoints: ['src/admin.js', 'src/gallery.js'], bundle: true, minify: true, outdir: 'dist/assets', format: 'esm', splitting: true, define: { __SUPABASE_CONFIG__: JSON.stringify(config) } });
-await copyFile('vercel.json', 'dist/vercel.json');
 console.log(config.url ? 'Build configured for Supabase.' : 'Build ready. Supabase is pending; existing galleries remain visible.');

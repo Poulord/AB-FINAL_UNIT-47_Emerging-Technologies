@@ -14,7 +14,7 @@ Para probar con un móvil conectado a la misma Wi-Fi, usar `http://IP_DEL_ORDENA
 ## Uso del panel
 
 - Elegir categoría y fotografías. Se convierten a JPEG, con un lado máximo de 2400 píxeles y calidad 90 %. La conversión elimina los metadatos EXIF del archivo generado. HEIC usa conversión local; si no se puede decodificar, el panel solicita exportar a JPG.
-- Las subidas quedan como borradores privados. Revisar la descripción y pulsar Publicar.
+- Las subidas quedan como borradores privados. Revisar la descripción y pulsar Publicar. No hay enlace público al panel: se accede por `/admin` o `/admin.html`.
 - Guardar cambios de descripción, orden, categoría, serie o composición antes de publicar. Las dos series corresponden a los bloques de imágenes de cada página.
 - Elegir una portada entre las fotos publicadas: cambia el hero de la categoría y sus tarjetas en Home/Gallery.
 - Ocultar una foto retira su acceso público nuevo y su aparición en la galería. Una URL firmada ya emitida puede continuar funcionando hasta una hora; una imagen que ya está cargada puede seguir en el navegador.
@@ -52,6 +52,16 @@ Los HTML mantienen las imágenes originales cuando Supabase no está configurado
 
 Antes de fusionar: probar con el propietario subida múltiple, publicación, orden, portada, sustitución, ocultación, eliminación, acceso desde un móvil físico y correo de recuperación. La edición libre de textos y nuevas rutas/categorías queda fuera de esta primera versión.
 
-Verificación realizada: compilación y sintaxis, rechazo de archivos no admitidos, políticas de lectura/escritura y escalada de permisos con cuentas temporales, subida/publicación/portada/eliminación en navegador, importación de 52 fotos, acceso de la cuenta del propietario y ausencia de desbordamiento horizontal a 390 píxeles. No se ha probado aún con un móvil físico ni con un archivo HEIC real.
+Verificación realizada: compilación y sintaxis, rechazo de archivos no admitidos, políticas de lectura/escritura y escalada de permisos con cuentas temporales, subida/publicación/portada/eliminación en navegador, importación de 52 fotos y acceso de la cuenta del propietario. Una cuenta normal con metadatos falsos de administrador fue rechazada tanto por la API como por el panel.
+
+La revisión de galerías verifica 360 combinaciones (cinco categorías, dos series, seis composiciones y cantidades 0, 1, 2, 3, 5 y 8) a 1280, 768 y 390 píxeles. Content Creation usa ahora la cuadrícula común, sin exigir parejas; respeta las composiciones verticales/horizontales y pequeñas/medianas/grandes. También se comprobaron las cinco páginas reales y Gallery contra los datos públicos de Supabase, incluidas las 53 fotos publicadas que había en la revisión.
+
+Las entradas SQL maliciosas se trataron como texto; los valores inválidos de composición y UUID fueron rechazados. No se construye SQL a partir de entradas del usuario. La pertenencia a `site_admins` es la autoridad para acceder y escribir, y ningún cliente público puede concederse ese permiso.
+
+Se han añadido cabeceras CSP sin `unsafe-inline` ni `unsafe-eval`, protección contra marcos externos y tipos MIME incorrectos. HEIC se convierte usando la variante CSP de `heic-to`, cargada solo cuando se necesita; se probó un archivo HEIC real de libheif con estas restricciones. Referencias: https://github.com/hoppergee/heic-to y https://github.com/strukturag/libheif/blob/master/examples/example.heic . Sigue pendiente la prueba con un móvil físico.
+
+`npm run verify:artifacts` comprueba que no se versionan archivos privados/generados ni se publican rutas ajenas a la lista permitida. Solo `.env.example` se versiona; `.env` contiene la URL del proyecto y una clave publishable pública, y no se copia al despliegue. El build rechaza claves secretas/service_role y despliegues Vercel sin configuración completa. Git también ignora nuevas fotos locales: se gestionan desde el panel. Se retiraron del seguimiento 140 fotos/vídeos que no utiliza la web, sin borrar sus copias locales ni reescribir el historial. El despliegue conserva los 64 recursos de respaldo/importación necesarios (unos 46 MB frente a 152 MB de la carpeta original). Las versiones antiguas del repositorio conservan los archivos ya publicados.
+
+La carpeta `dist` se regenera desde cero para no arrastrar archivos de pruebas o credenciales antiguos. No contiene fuentes de servidor, migraciones, documentación, `.env`, claves privadas ni resultados de pruebas. El código SQL de las migraciones y los scripts de comprobación sí se versionan para poder reproducir el despliegue; no contienen credenciales.
 
 El auditor de seguridad no detectó problemas de las tablas o el almacenamiento. Sí informa de que la protección de Auth contra contraseñas filtradas está desactivada; revisar su disponibilidad y activación antes de producción: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection . El índice de autor aparece como no utilizado al inicio; se conserva porque soporta la clave foránea y las operaciones sobre usuarios.

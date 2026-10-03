@@ -458,12 +458,15 @@ h3 {
 
 .series-grid {
   display: grid;
-  grid-template-columns: repeat(12, 1fr);
+  grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: clamp(12px, 1.5vw, 20px);
 }
 
+.portfolio-message { grid-column: 1 / -1; }
+
 .series-grid .frame {
-  min-height: 280px;
+  min-height: 0;
+  width: 100%;
   overflow: hidden;
   background: var(--sand);
 }

@@ -9,6 +9,7 @@ ok(await admin.auth.signInWithPassword({ email:'lilly-admin-test@example.invalid
 ok(await reader.auth.signInWithPassword({ email:'lilly-reader-test@example.invalid', password:process.env.TEST_PASSWORD }));
 const path = `tests/${crypto.randomUUID()}.png`;
 const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII=', 'base64');
+const previousCover = ok(await admin.from('photos').select('id').eq('category_slug','weddings').eq('is_cover',true).maybeSingle());
 let id;
 try {
   ok(await admin.storage.from('portfolio').upload(path,png,{contentType:'image/png'}));
@@ -20,6 +21,17 @@ try {
   check.equal(ok(await reader.from('photos').update({published:true}).eq('id',id).select()).length,0);
   check.ok((await reader.from('site_admins').insert({user_id:(await reader.auth.getUser()).data.user.id})).error);
   check.ok((await reader.storage.from('portfolio').upload('tests/forbidden.png',png,{contentType:'image/png'})).error);
+  check.ok((await anon.from('photos').insert({category_slug:'weddings',storage_path:'tests/anonymous.png',width:1,height:1})).error);
+  check.equal(ok(await reader.from('photos').delete().eq('id',id).select()).length,0);
+  check.equal(ok(await reader.from('categories').update({name:'Forbidden'}).eq('slug','weddings').select()).length,0);
+  ok(await reader.auth.updateUser({data:{role:'admin',is_admin:true}}));
+  check.equal(ok(await reader.from('photos').update({published:true}).eq('id',id).select()).length,0);
+  const injection = "'; DROP TABLE public.categories; -- <img src=x onerror=alert(1)>";
+  ok(await admin.from('photos').update({alt:injection}).eq('id',id));
+  check.equal(ok(await admin.from('photos').select('alt').eq('id',id).single()).alt,injection);
+  check.equal(ok(await anon.from('categories').select('slug')).length,5);
+  check.ok((await admin.from('photos').update({layout:'portrait; DROP TABLE photos; --'}).eq('id',id)).error);
+  check.ok((await admin.rpc('set_photo_cover',{photo_id:"' OR 1=1 --"})).error);
   ok(await admin.from('photos').update({published:true}).eq('id',id));
   check.equal(ok(await anon.from('photos').select('id').eq('id',id)).length,1);
   check.ok(ok(await anon.storage.from('portfolio').createSignedUrl(path,60)).signedUrl);
@@ -28,12 +40,17 @@ try {
   check.ok((await reader.rpc('set_photo_cover',{photo_id:id})).error);
   const rejected=await reader.functions.invoke('manage-admin',{body:{email:'not-created@example.invalid',password:'never-created-123'}});
   check.ok(rejected.error);
+  check.equal(rejected.error.context.status,403);
+  const unauthenticated = await anon.functions.invoke('manage-admin',{body:{email:'not-created@example.invalid',password:'never-created-123'}});
+  check.ok(unauthenticated.error);
+  check.equal(unauthenticated.error.context.status,401);
   ok(await admin.from('photos').update({published:false,is_cover:false}).eq('id',id));
   check.equal(ok(await anon.from('photos').select('id').eq('id',id)).length,0);
   check.ok((await anon.storage.from('portfolio').createSignedUrl(path,60)).error);
-  console.log('PASS: private drafts, public publication, hiding, cover RPC, storage permissions and privilege escalation.');
+  console.log('PASS: RLS, storage, unauthenticated access, fake admin metadata, SQL payloads, typed RPC and administrator-only Edge Function.');
 } finally {
   if(id)ok(await admin.from('photos').delete().eq('id',id));
   ok(await admin.storage.from('portfolio').remove([path]));
+  if(previousCover) ok(await admin.rpc('set_photo_cover',{photo_id:previousCover.id}));
   await admin.auth.signOut(); await reader.auth.signOut();
 }

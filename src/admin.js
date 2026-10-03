@@ -79,9 +79,14 @@ async function loadPhotos() {
 async function showSession(session) {
   $('login-panel').hidden = !!session;
   $('workspace').hidden = true; $('password-panel').hidden = !session || !recovery;
-  if (!session || recovery) return;
-  const membership = assert(await db.from('site_admins').select('user_id').eq('user_id', session.user.id).maybeSingle());
-  if (!membership) { status('Tu cuenta no tiene permisos para gestionar la web. Solicita acceso al propietario.', true); $('workspace').hidden = false; $('workspace').replaceChildren(node('button', 'Cerrar sesión')); $('workspace').firstChild.onclick = () => db.auth.signOut().then(() => location.reload()); return; }
+  if (!session || recovery) return false;
+  const identity = assert(await db.auth.getUser());
+  const membership = assert(await db.from('site_admins').select('user_id').eq('user_id', identity.user.id).maybeSingle());
+  if (!membership) {
+    await db.auth.signOut();
+    $('photo-list').replaceChildren(); $('workspace').hidden = true; $('login-panel').hidden = false;
+    status('Tu cuenta no tiene permisos para gestionar la web. Solicita acceso al propietario.', true); return false;
+  }
   categories = assert(await db.from('categories').select('*').order('position'));
   $('category').replaceChildren(...categories.map(c => { const option = node('option', c.name); option.value = c.slug; return option; }));
   $('account').textContent = session.user.email;
@@ -96,11 +101,12 @@ async function showSession(session) {
   }
   $('workspace').hidden = false;
   await loadPhotos();
+  return true;
 }
 $('login-form').onsubmit = event => { event.preventDefault(); action(async () => {
   const form = new FormData(event.target);
   const data = assert(await db.auth.signInWithPassword({ email: form.get('email'), password: form.get('password') }));
-  event.target.reset(); await showSession(data.session); status('Sesión iniciada.');
+  event.target.reset(); if (await showSession(data.session)) status('Sesión iniciada.');
 }); };
 $('recover').onclick = () => action(async () => {
   const email = $('login-form').elements.email.value;
@@ -188,7 +194,7 @@ if (!db) {
   recovery = /type=(recovery|invite)/.test(location.hash);
   db.auth.onAuthStateChange((event, session) => {
     if (event === 'PASSWORD_RECOVERY') { recovery = true; $('workspace').hidden = true; $('login-panel').hidden = true; $('password-panel').hidden = false; }
-    if (event === 'SIGNED_OUT') { $('workspace').hidden = true; $('login-panel').hidden = false; }
+    if (event === 'SIGNED_OUT') { $('workspace').hidden = true; $('login-panel').hidden = false; $('photo-list').replaceChildren(); }
   });
   action(async () => { const data = assert(await db.auth.getSession()); await showSession(data.session); });
 }

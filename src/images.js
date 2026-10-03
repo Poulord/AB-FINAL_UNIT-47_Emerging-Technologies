@@ -7,8 +7,8 @@ export async function prepareImage(file) {
   validateFile(file);
   let input = file;
   if (/\.(heic|heif)$/i.test(file.name)) {
-    const { default: convert } = await import('heic2any');
-    try { input = await convert({ blob: file, toType: 'image/jpeg', quality: 0.92 }); }
+    const { heicTo } = await import('heic-to/csp');
+    try { input = await heicTo({ blob: file, type: 'image/jpeg', quality: 0.92 }); }
     catch { throw new Error('No se pudo convertir esta foto HEIC. Expórtala como JPG y vuelve a subirla.'); }
     if (Array.isArray(input)) input = input[0];
   }
