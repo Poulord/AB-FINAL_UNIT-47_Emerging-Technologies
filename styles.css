@@ -463,6 +463,10 @@ h3 {
 }
 
 .portfolio-message { grid-column: 1 / -1; }
+.series-grid.grouped-gallery, .paired-stories.grouped-gallery { display: block; }
+.portfolio-group + .portfolio-group { margin-top: clamp(36px, 5vw, 64px); padding-top: clamp(28px, 4vw, 48px); border-top: 1px solid var(--line); }
+.dark .portfolio-group + .portfolio-group, .oxblood .portfolio-group + .portfolio-group { border-top-color: rgba(244, 240, 234, .18); }
+.collection-title { margin: 0 0 24px; font-size: clamp(1.5rem, 3vw, 2.2rem); line-height: 1.2; }
 
 .series-grid .frame {
   min-height: 0;

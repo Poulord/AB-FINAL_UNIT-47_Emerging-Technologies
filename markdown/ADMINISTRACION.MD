@@ -13,14 +13,32 @@ Para probar con un móvil conectado a la misma Wi-Fi, usar `http://IP_DEL_ORDENA
 
 ## Uso del panel
 
-- Elegir categoría y fotografías. Se convierten a JPEG, con un lado máximo de 2400 píxeles y calidad 90 %. La conversión elimina los metadatos EXIF del archivo generado. HEIC usa conversión local; si no se puede decodificar, el panel solicita exportar a JPG.
+- Elegir categoría y grupo de destino antes de seleccionar las fotografías. Se convierten a JPEG, con un lado máximo de 2400 píxeles y calidad 90 %. La conversión elimina los metadatos EXIF del archivo generado. HEIC usa conversión local; si no se puede decodificar, el panel solicita exportar a JPG.
 - Las subidas quedan como borradores privados. Revisar la descripción y pulsar Publicar. No hay enlace público al panel: se accede por `/admin` o `/admin.html`.
-- Guardar cambios de descripción, orden, categoría, serie o composición antes de publicar. Las dos series corresponden a los bloques de imágenes de cada página.
+- Guardar cambios de descripción, orden, categoría, grupo o composición antes de publicar. El orden de las fotos se aplica dentro de su grupo.
 - Elegir una portada entre las fotos publicadas: cambia el hero de la categoría y sus tarjetas en Home/Gallery.
 - Ocultar una foto retira su acceso público nuevo y su aparición en la galería. Una URL firmada ya emitida puede continuar funcionando hasta una hora; una imagen que ya está cargada puede seguir en el navegador.
 - Sustituir una imagen conserva la ficha y su orden. Eliminar requiere confirmación.
 - Importar el portfolio inicial conserva 52 imágenes y sus composiciones; se puede reintentar y omite las fichas ya importadas.
 - Crear otra cuenta desde «Dar acceso a otra persona». Compartir su contraseña inicial de forma privada. Cada administrador puede cambiar su propia contraseña.
+
+## Grupos y zonas
+
+| Categoría | Organización recomendada |
+| --- | --- |
+| Weddings | Un grupo por boda, sin mezclar celebraciones. |
+| Lifestyle | Una selección conjunta si encaja; separar por sesión cuando cambian la familia, pareja o historia. |
+| Personal Brands | Un grupo por cliente o campaña. |
+| Wellness & Retreats | Un grupo por retiro o evento; un solo grupo si corresponde al mismo retiro. |
+| Content Creation | Un grupo por campaña o colaboración; las parejas nunca se forman entre grupos distintos. |
+
+1. Crear o renombrar el grupo desde su categoría. El nombre identifica el grupo en el panel; no incluir datos confidenciales, ya que los grupos con fotos publicadas se pueden consultar en la API. El título opcional es lo que aparece como encabezado en la página.
+2. Elegir la zona principal o secundaria. Conservan los fondos y diseños existentes; puede haber cualquier número de grupos dentro de cada zona. Los grupos se separan con espacio y una línea discreta.
+3. Seleccionar ese grupo en «Grupo de destino», elegir las fotos y guardarlas como borradores. Después revisar y publicar cada foto. El panel permite filtrar por grupo.
+4. Para mover una foto, elegir categoría y grupo en su ficha y guardar. Para mover todas las fotos de un grupo entre zonas, cambiar la zona del grupo y guardar; la base de datos las traslada juntas.
+5. Los grupos vacíos o con solo borradores no aparecen en la web. Para eliminar un grupo primero hay que trasladar sus fotos, incluidos los borradores. La portada sigue perteneciendo a la categoría completa.
+
+La migración conserva las antiguas series como grupos iniciales, con títulos visibles vacíos para mantener la estética. Las 56 fotos existentes al aplicar el cambio mantienen zona, orden, composición y publicación. Los nombres «Boda 1», «Boda 2», etc. se pueden cambiar; las nuevas fotos se asignan explícitamente al grupo elegido, sin intentar deducirlo de la imagen.
 
 ## Supabase
 
@@ -29,12 +47,13 @@ Proyecto de desarrollo: **Web-Lilly Dev**, ref `iuoiibhrtcezuqsssjav`, organizac
 - Auth administra identidades y contraseñas.
 - `site_admins`: lista de administradores. El navegador no tiene permisos para modificarla.
 - `categories`: cinco categorías con nombre editable; las rutas permanecen fijas.
-- `photos`: archivo, descripción, categoría, orden, serie, composición, publicación y portada.
+- `photo_collections`: grupo, categoría, zona, título opcional y orden. RLS permite gestión solo a administradores y lectura pública solo si contiene fotos publicadas.
+- `photos`: archivo, descripción, categoría, grupo, orden dentro del grupo, zona, composición, publicación y portada. Una clave foránea compuesta impide asignaciones entre categorías o zonas incompatibles.
 - Bucket privado `portfolio`: las políticas permiten lecturas públicas solo para archivos de fotografías publicadas; las escrituras requieren pertenecer a `site_admins`.
 - Función `set_photo_cover`: cambia la portada en una transacción y respeta RLS.
 - Edge Function `manage-admin`: valida el usuario y su pertenencia a `site_admins` antes de crear una cuenta. La clave privilegiada permanece en el servidor. No envía correos.
 
-La migración está en `supabase/migrations/`. En un proyecto nuevo hay que aplicar la migración, desplegar `manage-admin`, crear la primera identidad desde el dashboard de Auth y añadir su UUID a `site_admins` mediante SQL administrativo. Esta operación inicial no está expuesta al público.
+Las migraciones están en `supabase/migrations/`. En un proyecto nuevo hay que aplicarlas por orden, desplegar `manage-admin`, crear la primera identidad desde el dashboard de Auth y añadir su UUID a `site_admins` mediante SQL administrativo. Esta operación inicial no está expuesta al público. El proyecto de desarrollo ya tiene aplicado el esquema de grupos.
 
 ## Recuperación de contraseña
 
@@ -49,6 +68,8 @@ Los HTML mantienen las imágenes originales cuando Supabase no está configurado
 ## Verificación
 
 `npm run check`, `npm test`, `npm run build`. `tools/verify-backend.mjs` verifica RLS y almacenamiento contra un proyecto de pruebas con dos cuentas temporales y `.env.testing`; requiere provisionarlas previamente. Sus credenciales no se guardan en Git. El script limpia la fotografía que crea. No usar datos de producción.
+
+Los grupos se verificaron con 240 combinaciones de categoría, zona y cantidades 0/1/2/3/5/8 a 1280/768/390/320 píxeles: sin solapamientos, sin cruces entre campañas y sin grupos de borradores visibles. Se revisaron también las cinco páginas reales en escritorio y móvil. `tests/collections.sql`, ejecutado como propietario solo en desarrollo, comprueba permisos de administrador/visitante/usuario normal, traslados entre zonas y categorías, compatibilidad de la importación y rechazo de borrado de grupos ocupados; sus datos se revierten con ROLLBACK. La creación, edición y filtro se probaron en el panel real; la subida múltiple, asignación, publicación y cambio de categoría se verificaron en una copia local del panel con API simulada, sin alterar fotografías del propietario.
 
 Antes de fusionar: probar con el propietario subida múltiple, publicación, orden, portada, sustitución, ocultación, eliminación, acceso desde un móvil físico y correo de recuperación. La edición libre de textos y nuevas rutas/categorías queda fuera de esta primera versión.
 

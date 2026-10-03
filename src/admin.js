@@ -1,7 +1,8 @@
 import { db, bucket, assert, imageUrls } from './client.js';
 import { prepareImage } from './images.js';
+import { COLLECTION_TYPES, collectionOptions } from './portfolio.js';
 const $ = id => document.getElementById(id);
-let categories = [], photos = [], pending = [], busy = false, recovery = false;
+let categories = [], collections = [], photos = [], pending = [], busy = false, recovery = false;
 const previewUrls = [];
 function status(message, error = false) { $('status').textContent = message; $('status').className = error ? 'error' : 'success'; }
 function lock(value) {
@@ -21,28 +22,38 @@ function input(value, type = 'text') { const el = node('input'); el.type = type;
 function select(values, value) { const el = node('select'); values.forEach(([id, label]) => { const option = node('option', label); option.value = id; el.append(option); }); el.value = value; return el; }
 async function loadPhotos() {
   const category = $('category').value;
+  collections = assert(await db.from('photo_collections').select('*').order('section').order('position').order('id'));
+  renderCollectionControls();
   photos = assert(await db.from('photos').select('*').eq('category_slug', category).order('position').order('id'));
   const urls = await imageUrls(photos);
   $('category-name').value = categories.find(c => c.slug === category)?.name || '';
   $('photo-list').replaceChildren();
   if (!photos.length) $('photo-list').append(node('p', 'Todavía no hay fotografías en esta categoría.'));
-  for (const photo of photos) {
+  const filtered = photos.filter(p => !$('collection-filter').value || p.collection_id === $('collection-filter').value);
+  if (photos.length && !filtered.length) $('photo-list').append(node('p', 'Este grupo todavía no tiene fotografías.'));
+  for (const photo of filtered) {
     const card = node('article', '', 'photo-editor');
     const img = node('img'); img.src = urls.get(photo.storage_path); img.alt = photo.alt; img.loading = 'lazy'; card.append(img);
     card.append(node('span', photo.is_cover ? 'Publicada · Portada' : photo.published ? 'Publicada' : 'Borrador · Solo administradores', 'badge'));
     const alt = input(photo.alt); alt.maxLength = 500;
     const position = input(photo.position, 'number'); position.min = 0; position.step = 1;
     const categorySelect = select(categories.map(c => [c.slug, c.name]), photo.category_slug);
-    const section = select([['0', 'Primera serie'], ['1', 'Segunda serie']], String(photo.section));
+    const group = select(collectionOptions(collections, photo.category_slug), photo.collection_id);
+    categorySelect.onchange = () => { group.replaceChildren(...collectionOptions(collections, categorySelect.value).map(([id,label]) => { const option=node('option',label); option.value=id; return option; })); };
     const layout = select([['portrait span-3','Vertical pequeña'],['portrait span-4','Vertical mediana'],['portrait span-6','Vertical grande'],['landscape span-3','Horizontal pequeña'],['landscape span-4','Horizontal mediana'],['landscape span-6','Horizontal grande']], photo.layout);
-    card.append(field('Descripción de la fotografía', alt), field('Orden (número menor primero)', position), field('Categoría', categorySelect), field('Serie', section), field('Composición', layout));
+    card.append(field('Descripción de la fotografía', alt), field('Orden dentro del grupo (número menor primero)', position), field('Categoría', categorySelect), field('Grupo', group), field('Composición', layout));
+    const layoutHint = node('p', '', 'photo-hint');
+    const updateLayoutHint = () => { layoutHint.textContent = categorySelect.value === 'content-creation' && collections.find(g=>g.id===group.value)?.section === 0 ? 'Esta zona conserva parejas con encuadre 4:5; la composición individual no cambia su tamaño.' : ''; };
+    group.onchange = updateLayoutHint; categorySelect.addEventListener('change',updateLayoutHint); updateLayoutHint(); card.append(layoutHint);
     const replacement = input('', 'file'); replacement.accept = 'image/jpeg,image/png,image/webp,.heic,.heif';
     card.append(field('Sustituir imagen (opcional)', replacement));
     const actions = node('div', '', 'actions');
     const addButton = (label, fn) => { const button = node('button', label, 'secondary'); button.type = 'button'; button.onclick = () => action(fn); actions.append(button); };
     addButton('Guardar cambios', async () => {
       let uploadedPath;
-      const changes = { alt: alt.value.trim(), position: Number(position.value), category_slug: categorySelect.value, section: Number(section.value), layout: layout.value };
+      const destination = collections.find(g => g.id === group.value && g.category_slug === categorySelect.value);
+      if (!destination) throw new Error('Crea y elige un grupo en la categoría de destino.');
+      const changes = { alt: alt.value.trim(), position: Number(position.value), category_slug: categorySelect.value, collection_id: destination.id, section: destination.section, layout: layout.value };
       if (!Number.isInteger(changes.position) || changes.position < 0) throw new Error('El orden debe ser un número entero positivo o cero.');
       if (categorySelect.value !== photo.category_slug) changes.is_cover = false;
       if (replacement.files[0]) {
@@ -74,6 +85,48 @@ async function loadPhotos() {
       await loadPhotos(); status('Fotografía eliminada.');
     });
     card.append(actions); $('photo-list').append(card);
+  }
+}
+function updateOptions(el, options) {
+  const previous = el.value; el.replaceChildren(...options.map(([id,label]) => { const option=node('option',label); option.value=id; return option; }));
+  if (options.some(([id]) => id === previous)) el.value=previous;
+}
+function renderCollectionControls() {
+  const category = $('category').value, type = COLLECTION_TYPES[category];
+  $('groups-heading').textContent = `${type.label}: organiza tus fotografías`;
+  $('group-guidance').textContent = type.guidance;
+  const zones = type.zones.map((label,i) => [String(i),label]);
+  updateOptions($('collection-zone'), zones);
+  const options = collectionOptions(collections, category);
+  updateOptions($('upload-collection'), options);
+  updateOptions($('collection-filter'), [['','Todos los grupos'], ...options]);
+  $('collection-list').replaceChildren();
+  for (const [id] of options) {
+    const group = collections.find(g => g.id === id);
+    const row = node('article','','collection-editor');
+    const name=input(group.name); name.maxLength=100;
+    const title=input(group.title); title.maxLength=100;
+    const zone=select(zones,String(group.section));
+    const position=input(group.position,'number');position.min=0;position.step=1;
+    row.append(field('Nombre del grupo',name),field('Título visible (opcional)',title),field('Zona',zone),field('Orden del grupo en esa zona',position));
+    const save=node('button','Guardar grupo','secondary');save.type='button';
+    save.onclick=()=>action(async()=>{
+      if(!name.value.trim()) throw new Error('Escribe un nombre para el grupo.');
+      if(!Number.isInteger(Number(position.value)) || Number(position.value)<0) throw new Error('El orden debe ser un entero positivo o cero.');
+      const result=assert(await db.from('photo_collections').update({name:name.value.trim(),title:title.value.trim(),section:Number(zone.value),position:Number(position.value)}).eq('id',id).select('id'));
+      if(!result.length) throw new Error('No se guardó el grupo.');
+      await loadPhotos();status('Grupo actualizado. Sus fotos conservan la asignación y se trasladan juntas si cambias la zona.');
+    });
+    const remove=node('button','Eliminar grupo vacío','secondary');remove.type='button';
+    remove.onclick=()=>action(async()=>{
+      const used=assert(await db.from('photos').select('id').eq('collection_id',id).limit(1));
+      if(used.length) throw new Error('Mueve las fotos a otro grupo antes de eliminarlo. También cuentan los borradores.');
+      if(!confirm('¿Eliminar este grupo vacío?')) return;
+      const result=assert(await db.from('photo_collections').delete().eq('id',id).select('id'));
+      if(!result.length) throw new Error('No se eliminó el grupo.');
+      await loadPhotos(); status('Grupo vacío eliminado.');
+    });
+    const actions=node('div','','actions');actions.append(save,remove);row.append(actions);$('collection-list').append(row);
   }
 }
 async function showSession(session) {
@@ -121,6 +174,15 @@ $('password-form').onsubmit = event => { event.preventDefault(); action(async ()
 $('logout').onclick = () => action(async () => { assert(await db.auth.signOut()); location.reload(); });
 $('category').onchange = () => action(loadPhotos);
 $('refresh').onclick = () => action(loadPhotos);
+$('collection-filter').onchange = () => action(loadPhotos);
+$('collection-form').onsubmit = event => { event.preventDefault(); action(async () => {
+  const category=$('category').value,section=Number($('collection-zone').value);
+  const name=$('collection-name').value.trim();if(!name) throw new Error('Escribe un nombre para el grupo.');
+  const position=Math.max(-1,...collections.filter(g=>g.category_slug===category && g.section===section).map(g=>g.position))+1;
+  const [created]=assert(await db.from('photo_collections').insert({category_slug:category,section,name,title:$('collection-title').value.trim(),position}).select('id'));
+  $('collection-name').value='';$('collection-title').value='';
+  await loadPhotos();$('upload-collection').value=created.id;status('Grupo creado. Ya puedes elegir sus fotografías y guardarlas como borradores.');
+}); };
 $('category-form').onsubmit = event => { event.preventDefault(); action(async () => {
   const name = $('category-name').value.trim(); if (!name) throw new Error('Escribe un nombre para la categoría.');
   const changed = assert(await db.from('categories').update({ name }).eq('slug', $('category').value).select('*'));
@@ -142,7 +204,9 @@ $('files').onchange = () => action(async () => {
 });
 $('upload').onclick = () => action(async () => {
   const category = $('category').value;
-  let position = Math.max(-1, ...photos.map(p => p.position)) + 1;
+  const destination = collections.find(g => g.id === $('upload-collection').value && g.category_slug === category);
+  if (!destination) throw new Error('Crea y elige un grupo de destino antes de subir las fotos.');
+  let position = Math.max(-1, ...photos.filter(p => p.collection_id === destination.id).map(p => p.position)) + 1;
   const failures = [];
   for (const [index, image] of [...pending].entries()) {
     $('upload-progress').textContent = `Subiendo ${index + 1} de ${pending.length}…`;
@@ -150,7 +214,7 @@ $('upload').onclick = () => action(async () => {
     try {
       if (!image.description.value.trim()) throw new Error('Añade una descripción.');
       assert(await db.storage.from(bucket).upload(path, image.blob, { contentType: 'image/jpeg', cacheControl: '3600' }));
-      try { assert(await db.from('photos').insert({ category_slug: category, storage_path: path, alt: image.description.value.trim(), width: image.width, height: image.height, position: position++, layout: image.width > image.height ? 'landscape span-6' : 'portrait span-4' })); }
+      try { assert(await db.from('photos').insert({ category_slug: category, collection_id: destination.id, section: destination.section, storage_path: path, alt: image.description.value.trim(), width: image.width, height: image.height, position: position++, layout: image.width > image.height ? 'landscape span-6' : 'portrait span-4' })); }
       catch (error) { await db.storage.from(bucket).remove([path]); throw error; }
       image.description.closest('div').remove();
     } catch (error) { failures.push(image); status(`${image.file.name}: ${error.message}`, true); }
