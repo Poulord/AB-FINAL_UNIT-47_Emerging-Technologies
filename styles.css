@@ -515,15 +515,22 @@ h3 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: clamp(18px, 3vw, 38px);
+  align-items: start;
 }
 
 .pair {
+  --pair-gap: 10px;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--pair-gap);
   background: rgba(255, 255, 255, 0.28);
   border: 1px solid var(--line);
   padding: 10px;
+}
+
+.pair.is-single {
+  grid-template-columns: minmax(0, 1fr);
+  width: calc((100% + 22px - var(--pair-gap)) / 2);
 }
 
 .pair .frame {
@@ -823,8 +830,7 @@ h3 {
   }
 
   .pair {
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    --pair-gap: 8px;
   }
 
   .footer-inner {
