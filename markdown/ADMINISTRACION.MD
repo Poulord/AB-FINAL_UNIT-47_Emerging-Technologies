@@ -51,3 +51,7 @@ Los HTML mantienen las imágenes originales cuando Supabase no está configurado
 `npm run check`, `npm test`, `npm run build`. `tools/verify-backend.mjs` verifica RLS y almacenamiento contra un proyecto de pruebas con dos cuentas temporales y `.env.testing`; requiere provisionarlas previamente. Sus credenciales no se guardan en Git. El script limpia la fotografía que crea. No usar datos de producción.
 
 Antes de fusionar: probar con el propietario subida múltiple, publicación, orden, portada, sustitución, ocultación, eliminación, acceso desde un móvil físico y correo de recuperación. La edición libre de textos y nuevas rutas/categorías queda fuera de esta primera versión.
+
+Verificación realizada: compilación y sintaxis, rechazo de archivos no admitidos, políticas de lectura/escritura y escalada de permisos con cuentas temporales, subida/publicación/portada/eliminación en navegador, importación de 52 fotos, acceso de la cuenta del propietario y ausencia de desbordamiento horizontal a 390 píxeles. No se ha probado aún con un móvil físico ni con un archivo HEIC real.
+
+El auditor de seguridad no detectó problemas de las tablas o el almacenamiento. Sí informa de que la protección de Auth contra contraseñas filtradas está desactivada; revisar su disponibilidad y activación antes de producción: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection . El índice de autor aparece como no utilizado al inicio; se conserva porque soporta la clave foránea y las operaciones sobre usuarios.
