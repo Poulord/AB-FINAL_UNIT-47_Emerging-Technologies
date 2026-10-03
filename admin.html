@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Gestión | Lily Flores Photography</title><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="admin.css"></head>
+<body class="admin-page">
+  <header class="admin-header"><a href="index.html">Lily Flores Photography</a><a href="gallery.html" target="_blank" rel="noopener">Ver la web ↗</a></header>
+  <main class="admin-main">
+    <div class="admin-heading"><span class="eyebrow">Tu espacio de gestión</span><h1>Historias que compartir.</h1><p>Organiza y publica tus fotografías desde cualquier dispositivo.</p></div>
+    <p id="status" role="status" aria-live="polite"></p>
+    <section id="login-panel" class="admin-box">
+      <h2>Iniciar sesión</h2><p>Acceso para las personas invitadas a gestionar la web.</p>
+      <form id="login-form"><label>Correo electrónico<input name="email" type="email" autocomplete="username" required></label><label>Contraseña<input name="password" type="password" autocomplete="current-password" required></label><button type="submit">Entrar</button><button id="recover" type="button" class="secondary">Recuperar contraseña</button></form>
+    </section>
+    <section id="password-panel" class="admin-box" hidden><h2>Establecer contraseña</h2><form id="password-form"><label>Nueva contraseña (mínimo 12 caracteres)<input name="password" type="password" minlength="12" autocomplete="new-password" required></label><button>Guardar contraseña</button></form></section>
+    <section id="workspace" hidden>
+      <div class="admin-toolbar"><p id="account"></p><button id="logout" class="secondary">Cerrar sesión</button></div>
+      <div class="admin-box"><label>Categoría<select id="category"></select></label><form id="category-form" class="inline-form"><label>Nombre visible<input id="category-name" maxlength="100" required></label><button>Guardar nombre</button></form></div>
+      <section class="admin-box"><h2 id="groups-heading">Grupos de fotografías</h2><p id="group-guidance"></p><p>La zona mantiene el fondo y el diseño actuales. Dentro de cada zona puedes tener varios grupos. El título visible es opcional; los grupos vacíos o con solo borradores no aparecen en la web.</p>
+        <form id="collection-form"><label>Nombre del grupo<input id="collection-name" maxlength="100" required placeholder="Por ejemplo: Boda en la playa"></label><label>Título visible en la web (opcional)<input id="collection-title" maxlength="100"></label><label>Zona de la página<select id="collection-zone"></select></label><button>Crear grupo</button></form>
+        <div id="collection-list" class="collection-list"></div>
+      </section>
+      <section class="admin-box"><h2>Añadir fotografías</h2><p>Selecciona fotos de tus archivos o de la galería del móvil. JPG, PNG, WebP y HEIC, hasta 30 MB por foto. Se optimizan antes de subirlas.</p>
+        <label>Grupo de destino para estas fotografías<select id="upload-collection"></select></label>
+        <label class="upload-zone">Elegir fotografías<input id="files" type="file" accept="image/jpeg,image/png,image/webp,.heic,.heif" multiple></label>
+        <div id="upload-previews" class="upload-previews"></div>
+        <button id="upload" disabled>Guardar como borradores</button><p id="upload-progress" role="status"></p>
+      </section>
+      <section class="admin-box"><div class="admin-toolbar"><h2>Fotografías de la categoría</h2><button id="refresh" class="secondary">Actualizar</button></div><label>Mostrar grupo<select id="collection-filter"></select></label><p>Guarda los cambios de cada foto antes de publicarla. El orden se aplica dentro de su grupo. La portada sigue siendo la de la categoría completa.</p><div id="photo-list" class="photo-list"></div></section>
+      <section class="admin-box"><h2>Importar el portfolio actual</h2><p>La primera importación conserva las fotografías y composiciones actuales. Puede tardar varios minutos. Las imágenes se importan publicadas y se omiten las que ya están importadas.</p><button id="import" class="secondary">Importar fotografías actuales</button></section>
+      <section class="admin-box"><h2>Dar acceso a otra persona</h2><p>Crea una cuenta administradora y comparte su contraseña inicial por un canal privado. No se envían correos automáticamente.</p><form id="admin-form"><label>Correo de la nueva cuenta<input name="email" type="email" autocomplete="off" required></label><label>Contraseña inicial (mínimo 12 caracteres)<input name="password" type="password" minlength="12" autocomplete="new-password" required></label><button>Crear cuenta administradora</button></form></section>
+    </section>
+  </main><script type="module" src="assets/admin.js"></script>
+</body></html>
