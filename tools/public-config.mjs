@@ -1,5 +1,6 @@
-export function publicConfig(env) {
-  const url = env.SUPABASE_URL || '', key = env.SUPABASE_PUBLISHABLE_KEY || '';
+export function publicConfig(env, defaults = {}) {
+  let url = env.SUPABASE_URL || '', key = env.SUPABASE_PUBLISHABLE_KEY || '';
+  if (!url && !key) { url = defaults.url || ''; key = defaults.key || ''; }
   if (!url && !key) {
     if (env.VERCEL === '1') throw new Error('Supabase configuration is required for deployment.');
     return { url: '', key: '' };

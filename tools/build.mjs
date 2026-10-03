@@ -5,7 +5,9 @@ import { publicConfig } from './public-config.mjs';
 import { existsSync } from 'node:fs';
 import { loadEnvFile } from 'node:process';
 if (existsSync('.env')) loadEnvFile('.env');
-const config = publicConfig(process.env);
+// These defaults contain only the browser-safe project URL and publishable key.
+const defaults = JSON.parse(await readFile(new URL('./public-supabase.json', import.meta.url), 'utf8'));
+const config = publicConfig(process.env, defaults);
 const root = resolve('.'); const output = resolve('dist');
 if (output !== resolve(root, 'dist') || !output.startsWith(root + sep)) throw new Error('Unsafe build output path.');
 await rm(output, { recursive: true, force: true });

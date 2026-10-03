@@ -5,7 +5,7 @@ Rama de desarrollo: `codex/admin-galerias`. No fusionar hasta completar la revis
 ## Ejecutar y probar
 
 1. `npm ci`.
-2. Copiar `.env.example` a `.env` e indicar URL y clave **publishable** del proyecto de pruebas. Nunca usar claves secretas o `service_role`.
+2. La configuración pública actual está en `tools/public-supabase.json`. Si se necesita otro proyecto, copiar `.env.example` a `.env` e indicar URL y clave **publishable**. Nunca usar claves secretas o `service_role`.
 3. `npm run dev`.
 4. Abrir `http://localhost:4173/admin.html` y entrar con una cuenta administradora.
 
@@ -42,7 +42,7 @@ La migración conserva las antiguas series como grupos iniciales, con títulos v
 
 ## Supabase
 
-Proyecto de desarrollo: **Web-Lilly Dev**, ref `iuoiibhrtcezuqsssjav`, organización **Pablos's Org**, región París. Es independiente de otros proyectos. La web de producción en main conserva su comportamiento anterior.
+Proyecto de desarrollo: **Web-Lilly Dev**, ref `iuoiibhrtcezuqsssjav`, organización **Pablos's Org**, región París. Es independiente de otros proyectos. El código actual está fusionado en main. La configuración pública por defecto utiliza este proyecto.
 
 - Auth administra identidades y contraseñas.
 - `site_admins`: lista de administradores. El navegador no tiene permisos para modificarla.
@@ -61,7 +61,7 @@ En Auth → URL Configuration, configurar la URL del sitio de preview y sus URLs
 
 ## Despliegue de preview
 
-Vercel ejecuta `npm run build` y sirve `dist`. Configurar `SUPABASE_URL` y `SUPABASE_PUBLISHABLE_KEY` **solo en Preview** con el proyecto de desarrollo. `.env` y las credenciales iniciales locales están excluidas de Git. Para producción, decidir si se crea otro proyecto antes de fusionar; no conectar automáticamente main al entorno de pruebas.
+Vercel ejecuta `npm run build` y sirve `dist`. La compilación utiliza por defecto la URL y clave publishable versionadas en `tools/public-supabase.json`; ambas son públicas y también están incluidas en el código del navegador. Para otro proyecto, configurar juntas `SUPABASE_URL` y `SUPABASE_PUBLISHABLE_KEY` en el entorno correspondiente de Vercel. `.env` y las credenciales iniciales locales están excluidas de Git. Si se decide aislar los datos de producción, crear otro proyecto, aplicar las migraciones y configurar sus dos variables públicas en Production antes de volver a desplegar.
 
 Los HTML mantienen las imágenes originales cuando Supabase no está configurado. Con Supabase configurado, las galerías muestran un aviso si falla el servicio para evitar recuperar fotografías que se hayan ocultado. Los archivos históricos en `img/` siguen siendo públicos; ocultar o eliminar una copia de Supabase no elimina su original histórico. Las fotos nuevas solo se suben a Supabase.
 
