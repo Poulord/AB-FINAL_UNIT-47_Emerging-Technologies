@@ -17,6 +17,19 @@ if (toggle) {
     toggle.setAttribute("aria-expanded", isOpen);
     toggle.setAttribute("aria-label", isOpen ? "Close menu" : "Open menu");
   });
+  const closeMenu = () => {
+    document.body.classList.remove('menu-open');
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.setAttribute('aria-label', 'Open menu');
+  };
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && document.body.classList.contains('menu-open')) {
+      closeMenu(); toggle.focus();
+    }
+  });
+  window.matchMedia('(max-width: 980px)').addEventListener('change', event => {
+    if (!event.matches) closeMenu();
+  });
 }
 
 navLinks.forEach((link) => {
